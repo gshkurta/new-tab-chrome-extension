@@ -44,12 +44,12 @@
         <div class="max-w-4xl mx-auto grid grid-cols-8 gap-4">
             <ContextMenu v-for="(url, index) in urlsList" :key="index">
                 <ContextMenuTrigger as-child>
-                    <div class="bg-slate-100 flex items-center justify-center overflow-hidden rounded-md h-16" @click.left="openUrl(url)">
-                        URL
+                    <div class="bg-slate-100 flex items-center justify-center overflow-hidden rounded-md h-16" @click.left="openUrl(url.url)">
+                        <img :src="url.faviconUrl" alt="">
                     </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                    <ContextMenuItem @click="removeUrl(url)">Delete</ContextMenuItem>
+                    <ContextMenuItem @click="removeUrl(url.url)">Delete</ContextMenuItem>
                 </ContextMenuContent>
             </ContextMenu>
         </div>
@@ -58,7 +58,9 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, onMounted } from 'vue';
+    import { ref, onMounted } from 'vue'
+    import type { Link } from './types/link'
+    import { fetchLinkMetadata } from './helpers/linkMetadata'
 
     import { Label } from '@/components/ui/label'
     import { Input } from '@/components/ui/input'
@@ -69,7 +71,7 @@
 
     const showUrlForm = ref<boolean>(false)
     const urlModel = ref<string>('')
-    const urlsList = ref<string[]>([])
+    const urlsList = ref<Link[]>([])
 
     onMounted(() => {
         loadUrls()
@@ -85,9 +87,10 @@
         window.open(url, '_blank')
     }
 
-    const insertUrl = () => {
+    const insertUrl = async () => {
         if (urlModel.value) {
-            urlsList.value.push(urlModel.value)
+            const metadata = await fetchLinkMetadata(urlModel.value)
+            urlsList.value.push({ url: urlModel.value, title: metadata.title, faviconUrl: metadata.faviconUrl })
             saveUrl()
             urlModel.value = ''
             showUrlForm.value = false
